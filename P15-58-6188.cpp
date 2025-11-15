@@ -328,70 +328,168 @@ void setupCamera() {
 
 void drawFloodlight(float rotation) {
 	glPushMatrix();
+	// Base plate (1)
 	glColor3f(0.18f, 0.2f, 0.22f);
 	glPushMatrix();
 	glScalef(0.18f, 0.04f, 0.18f);
 	glutSolidCube(1.0);
 	glPopMatrix();
+	// Base corners (4)
+	glColor3f(0.15f, 0.17f, 0.19f);
+	for (int i = 0; i < 4; ++i) {
+		glPushMatrix();
+		float angle = i * 90.0f;
+		float offsetX = 0.07f * cosf(DEG2RAD(angle));
+		float offsetZ = 0.07f * sinf(DEG2RAD(angle));
+		glTranslatef(offsetX, 0.025f, offsetZ);
+		glScalef(0.03f, 0.05f, 0.03f);
+		glutSolidCube(1.0);
+		glPopMatrix();
+	}
+	// Main stand (5)
+	glColor3f(0.18f, 0.2f, 0.22f);
 	glPushMatrix();
 	glTranslatef(0.0f, 0.12f, 0.0f);
 	glScalef(0.08f, 0.24f, 0.08f);
 	glutSolidCube(1.0);
 	glPopMatrix();
+	// Stand ring detail (6)
+	glColor3f(0.3f, 0.35f, 0.4f);
+	glPushMatrix();
+	glTranslatef(0.0f, 0.15f, 0.0f);
+	glutSolidTorus(0.015, 0.055, 12, 16);
+	glPopMatrix();
+	// Top mounting plate (7)
+	glColor3f(0.18f, 0.2f, 0.22f);
 	glPushMatrix();
 	glTranslatef(0.0f, 0.25f, 0.0f);
 	glScalef(0.14f, 0.04f, 0.14f);
 	glutSolidCube(1.0);
 	glPopMatrix();
+	// Rotating mechanism
 	glTranslatef(0.0f, 0.27f, 0.0f);
 	glRotatef(rotation, 0.0f, 1.0f, 0.0f);
+	// Light housing (8)
 	glColor3f(0.24f, 0.3f, 0.35f);
 	glPushMatrix();
 	glScalef(0.12f, 0.06f, 0.2f);
 	glutSolidCube(1.0);
 	glPopMatrix();
+	// Housing side vents (9-10)
+	glColor3f(0.15f, 0.2f, 0.25f);
+	glPushMatrix();
+	glTranslatef(0.065f, 0.0f, 0.05f);
+	glScalef(0.015f, 0.05f, 0.06f);
+	glutSolidCube(1.0);
+	glPopMatrix();
+	glPushMatrix();
+	glTranslatef(-0.065f, 0.0f, 0.05f);
+	glScalef(0.015f, 0.05f, 0.06f);
+	glutSolidCube(1.0);
+	glPopMatrix();
+	// Main lens (11)
 	glColor3f(0.65f, 0.85f, 0.9f);
+	glPushMatrix();
 	glTranslatef(0.0f, 0.01f, 0.08f);
 	glScalef(0.08f, 0.06f, 0.08f);
 	glutSolidSphere(0.8f, 20, 20);
+	glPopMatrix();
+	// Lens rim (12)
+	glColor3f(0.2f, 0.25f, 0.3f);
+	glPushMatrix();
+	glTranslatef(0.0f, 0.01f, 0.11f);
+	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+	glutSolidTorus(0.008, 0.045, 10, 16);
+	glPopMatrix();
 	glPopMatrix();
 }
 
 void drawAirlock(float doorPhase) {
 	float openOffset = 0.16f * (0.5f + 0.5f * sinf(doorPhase));
 	glPushMatrix();
+	// Left frame pillar (1)
 	glColor3f(0.25f, 0.3f, 0.35f);
 	glPushMatrix();
 	glTranslatef(-0.22f, 0.3f, 0.0f);
 	glScalef(0.08f, 0.6f, 0.4f);
 	glutSolidCube(1.0);
 	glPopMatrix();
+	// Right frame pillar (2)
 	glPushMatrix();
 	glTranslatef(0.22f, 0.3f, 0.0f);
 	glScalef(0.08f, 0.6f, 0.4f);
 	glutSolidCube(1.0);
 	glPopMatrix();
+	// Top frame (3)
 	glPushMatrix();
 	glTranslatef(0.0f, 0.6f, 0.0f);
 	glScalef(0.44f, 0.06f, 0.4f);
 	glutSolidCube(1.0);
 	glPopMatrix();
+	// Frame reinforcement bolts (4-7)
+	glColor3f(0.4f, 0.45f, 0.5f);
+	float boltPositions[4][2] = {{-0.22f, 0.55f}, {0.22f, 0.55f}, {-0.22f, 0.05f}, {0.22f, 0.05f}};
+	for (int i = 0; i < 4; ++i) {
+		glPushMatrix();
+		glTranslatef(boltPositions[i][0], boltPositions[i][1], 0.21f);
+		glScalef(0.025f, 0.025f, 0.02f);
+		glutSolidCube(1.0);
+		glPopMatrix();
+	}
+	// Left door panel (8)
 	glColor3f(0.35f, 0.52f, 0.6f);
 	glPushMatrix();
 	glTranslatef(-openOffset, 0.3f, 0.0f);
 	glScalef(0.16f, 0.5f, 0.32f);
 	glutSolidCube(1.0);
 	glPopMatrix();
+	// Left door window (9)
+	glColor3f(0.5f, 0.75f, 0.85f);
+	glPushMatrix();
+	glTranslatef(-openOffset, 0.35f, 0.165f);
+	glScalef(0.1f, 0.2f, 0.02f);
+	glutSolidCube(1.0);
+	glPopMatrix();
+	// Right door panel (10)
+	glColor3f(0.35f, 0.52f, 0.6f);
 	glPushMatrix();
 	glTranslatef(openOffset, 0.3f, 0.0f);
 	glScalef(0.16f, 0.5f, 0.32f);
 	glutSolidCube(1.0);
 	glPopMatrix();
+	// Right door window (11)
+	glColor3f(0.5f, 0.75f, 0.85f);
+	glPushMatrix();
+	glTranslatef(openOffset, 0.35f, 0.165f);
+	glScalef(0.1f, 0.2f, 0.02f);
+	glutSolidCube(1.0);
+	glPopMatrix();
+	// Bottom seal (12)
 	glColor3f(0.18f, 0.22f, 0.26f);
 	glPushMatrix();
 	glTranslatef(0.0f, 0.05f, 0.0f);
 	glScalef(0.42f, 0.1f, 0.08f);
 	glutSolidCube(1.0);
+	glPopMatrix();
+	// Control panel (13)
+	glColor3f(0.2f, 0.25f, 0.3f);
+	glPushMatrix();
+	glTranslatef(-0.3f, 0.25f, 0.18f);
+	glScalef(0.06f, 0.12f, 0.06f);
+	glutSolidCube(1.0);
+	glPopMatrix();
+	// Status lights (14-15)
+	glPushMatrix();
+	glTranslatef(-0.3f, 0.3f, 0.22f);
+	glColor3f(0.2f, 0.8f, 0.3f);
+	glScalef(0.02f, 0.02f, 0.02f);
+	glutSolidSphere(1.0f, 12, 12);
+	glPopMatrix();
+	glPushMatrix();
+	glTranslatef(-0.3f, 0.27f, 0.22f);
+	glColor3f(0.9f, 0.3f, 0.2f);
+	glScalef(0.02f, 0.02f, 0.02f);
+	glutSolidSphere(1.0f, 12, 12);
 	glPopMatrix();
 	glPopMatrix();
 }
@@ -461,13 +559,21 @@ void drawConsole(float pulsePhase) {
 
 void drawDrone(float bobPhase) {
 	float bob = 0.07f * sinf(bobPhase);
+	float spinPhase = bobPhase * 8.0f;
 	glPushMatrix();
 	glTranslatef(0.0f, 0.16f + bob, 0.0f);
+	// Main body (1)
 	glColor3f(0.65f, 0.2f, 0.3f);
 	glPushMatrix();
 	glScalef(0.16f, 0.08f, 0.16f);
 	glutSolidSphere(1.0f, 22, 22);
 	glPopMatrix();
+	// Body band detail (2)
+	glColor3f(0.5f, 0.15f, 0.25f);
+	glPushMatrix();
+	glutSolidTorus(0.012, 0.09, 12, 20);
+	glPopMatrix();
+	// Rotor arms (3-6)
 	glColor3f(0.2f, 0.22f, 0.25f);
 	glPushMatrix();
 	glTranslatef(0.14f, 0.0f, 0.0f);
@@ -489,11 +595,51 @@ void drawDrone(float bobPhase) {
 	glScalef(0.04f, 0.04f, 0.12f);
 	glutSolidCube(1.0);
 	glPopMatrix();
+	// Rotor propellers (7-10)
+	glColor3f(0.3f, 0.35f, 0.4f);
+	float rotorPos[4][2] = {{0.2f, 0.0f}, {-0.2f, 0.0f}, {0.0f, 0.2f}, {0.0f, -0.2f}};
+	for (int i = 0; i < 4; ++i) {
+		glPushMatrix();
+		glTranslatef(rotorPos[i][0], 0.02f, rotorPos[i][1]);
+		glRotatef(spinPhase * (i % 2 == 0 ? 1.0f : -1.0f), 0.0f, 1.0f, 0.0f);
+		glScalef(0.08f, 0.01f, 0.08f);
+		glutSolidCube(1.0);
+		glPopMatrix();
+	}
+	// Top sensor dome (11)
 	glColor3f(0.9f, 0.5f, 0.6f);
 	glPushMatrix();
 	glTranslatef(0.0f, 0.05f, 0.0f);
 	glScalef(0.08f, 0.02f, 0.08f);
 	glutSolidSphere(1.0f, 18, 18);
+	glPopMatrix();
+	// Front sensor (12)
+	glColor3f(0.15f, 0.7f, 0.8f);
+	glPushMatrix();
+	glTranslatef(0.0f, 0.0f, 0.09f);
+	glScalef(0.04f, 0.04f, 0.04f);
+	glutSolidSphere(1.0f, 16, 16);
+	glPopMatrix();
+	// Antenna mast (13)
+	glColor3f(0.25f, 0.28f, 0.32f);
+	glPushMatrix();
+	glTranslatef(0.0f, 0.08f, 0.0f);
+	glScalef(0.015f, 0.06f, 0.015f);
+	glutSolidCube(1.0);
+	glPopMatrix();
+	// Antenna tip (14)
+	glColor3f(0.9f, 0.7f, 0.2f);
+	glPushMatrix();
+	glTranslatef(0.0f, 0.12f, 0.0f);
+	glScalef(0.02f, 0.02f, 0.02f);
+	glutSolidSphere(1.0f, 12, 12);
+	glPopMatrix();
+	// Bottom light (15)
+	glColor3f(0.9f, 0.95f, 0.3f);
+	glPushMatrix();
+	glTranslatef(0.0f, -0.05f, 0.0f);
+	glScalef(0.025f, 0.015f, 0.025f);
+	glutSolidSphere(1.0f, 14, 14);
 	glPopMatrix();
 	glPopMatrix();
 }
