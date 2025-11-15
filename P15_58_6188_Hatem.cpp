@@ -193,6 +193,7 @@ void resetGame();
 void updateGame(float dt);
 void drawScene();
 void drawGround();
+void drawWallPanel(float width, float height, float colorPhase);
 void drawWalls();
 void drawPlayer();
 void drawGoals();
@@ -300,20 +301,44 @@ void resetGame() {
 }
 
 void setupLights() {
-	GLfloat ambient[] = { 0.2f, 0.25f, 0.35f, 1.0f };
-	GLfloat diffuse[] = { 0.4f, 0.6f, 0.7f, 1.0f };
-	GLfloat specular[] = { 0.6f, 0.7f, 0.8f, 1.0f };
-	GLfloat shininess[] = { 40.0f };
+	// Enhanced material properties for underwater metallic surfaces
+	GLfloat ambient[] = { 0.15f, 0.22f, 0.3f, 1.0f };
+	GLfloat diffuse[] = { 0.5f, 0.65f, 0.75f, 1.0f };
+	GLfloat specular[] = { 0.9f, 0.95f, 1.0f, 1.0f };
+	GLfloat shininess[] = { 80.0f };
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
 	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
 
-	GLfloat position[] = { -0.6f, 1.2f, 0.6f, 1.0f };
-	GLfloat lightDiffuse[] = { 0.5f, 0.7f, 0.9f, 1.0f };
-	glLightfv(GL_LIGHT0, GL_POSITION, position);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, lightDiffuse);
+	// Main overhead light (cool blue-white)
+	GLfloat position0[] = { 0.0f, 1.5f, 0.0f, 1.0f };
+	GLfloat lightDiffuse0[] = { 0.6f, 0.75f, 0.95f, 1.0f };
+	GLfloat lightSpecular0[] = { 0.8f, 0.9f, 1.0f, 1.0f };
+	glLightfv(GL_LIGHT0, GL_POSITION, position0);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse0);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular0);
+	glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, 1.0f);
+	glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.3f);
+
+	// Secondary accent light (warm orange from equipment)
+	GLfloat position1[] = { -0.7f, 0.4f, -0.6f, 1.0f };
+	GLfloat lightDiffuse1[] = { 0.8f, 0.5f, 0.3f, 1.0f };
+	glLightfv(GL_LIGHT1, GL_POSITION, position1);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, lightDiffuse1);
+	glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 1.0f);
+	glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 1.2f);
+	glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.5f);
+	glEnable(GL_LIGHT1);
+
+	// Underwater fog effect
+	GLfloat fogColor[] = { 0.05f, 0.15f, 0.22f, 1.0f };
+	glFogfv(GL_FOG_COLOR, fogColor);
+	glFogi(GL_FOG_MODE, GL_LINEAR);
+	glFogf(GL_FOG_START, 1.5f);
+	glFogf(GL_FOG_END, 4.0f);
+	glFogf(GL_FOG_DENSITY, 0.3f);
+	glEnable(GL_FOG);
 }
 
 void setupCamera() {
@@ -646,40 +671,131 @@ void drawDrone(float bobPhase) {
 
 void drawGround() {
 	glPushMatrix();
-	glColor3f(0.08f, 0.18f, 0.22f);
-	glTranslatef(0.0f, GROUND_Y - 0.015f, 0.0f);
-	glScalef(SCENE_HALF * 2.2f, 0.03f, SCENE_HALF * 2.2f);
-	glutSolidCube(1.0);
+	glTranslatef(0.0f, GROUND_Y - 0.01f, 0.0f);
+	
+	// Main seabed floor with grid pattern
+	int gridSize = 20;
+	float tileSize = (SCENE_HALF * 2.2f) / gridSize;
+	for (int i = 0; i < gridSize; ++i) {
+		for (int j = 0; j < gridSize; ++j) {
+			float x = -SCENE_HALF * 1.1f + i * tileSize;
+			float z = -SCENE_HALF * 1.1f + j * tileSize;
+			float noise = sinf(i * 0.5f) * cosf(j * 0.4f) * 0.005f;
+			
+			// Varying tile colors for depth
+			float colorVar = 0.9f + 0.1f * sinf((i + j) * 0.3f);
+			glColor3f(0.06f * colorVar, 0.14f * colorVar, 0.18f * colorVar);
+			
+			glPushMatrix();
+			glTranslatef(x + tileSize * 0.5f, noise, z + tileSize * 0.5f);
+			glBegin(GL_QUADS);
+			glNormal3f(0.0f, 1.0f, 0.0f);
+			glVertex3f(-tileSize * 0.48f, 0.0f, -tileSize * 0.48f);
+			glVertex3f(tileSize * 0.48f, 0.0f, -tileSize * 0.48f);
+			glVertex3f(tileSize * 0.48f, 0.0f, tileSize * 0.48f);
+			glVertex3f(-tileSize * 0.48f, 0.0f, tileSize * 0.48f);
+			glEnd();
+			glPopMatrix();
+		}
+	}
+	
+	// Grid lines for detail
+	glDisable(GL_LIGHTING);
+	glLineWidth(1.0f);
+	glColor3f(0.12f, 0.25f, 0.3f);
+	glBegin(GL_LINES);
+	for (int i = 0; i <= gridSize; ++i) {
+		float pos = -SCENE_HALF * 1.1f + i * tileSize;
+		glVertex3f(pos, 0.002f, -SCENE_HALF * 1.1f);
+		glVertex3f(pos, 0.002f, SCENE_HALF * 1.1f);
+		glVertex3f(-SCENE_HALF * 1.1f, 0.002f, pos);
+		glVertex3f(SCENE_HALF * 1.1f, 0.002f, pos);
+	}
+	glEnd();
+	glEnable(GL_LIGHTING);
+	
 	glPopMatrix();
 }
 
+void drawWallPanel(float width, float height, float colorPhase) {
+	float r = 0.18f + 0.12f * sinf(colorPhase);
+	float g = 0.38f + 0.18f * sinf(colorPhase + 2.094f);
+	float b = 0.52f + 0.18f * sinf(colorPhase + 4.188f);
+	
+	int panels = 5;
+	float panelWidth = width / panels;
+	float panelHeight = height / 3.0f;
+	
+	for (int row = 0; row < 3; ++row) {
+		for (int col = 0; col < panels; ++col) {
+			float px = -width * 0.5f + col * panelWidth + panelWidth * 0.5f;
+			float py = row * panelHeight + panelHeight * 0.5f;
+			
+			// Panel plate with slight color variation
+			float variation = 0.95f + 0.05f * sinf((row + col) * 1.2f);
+			glColor3f(r * variation, g * variation, b * variation);
+			glPushMatrix();
+			glTranslatef(px, py, 0.015f);
+			glScalef(panelWidth * 0.92f, panelHeight * 0.9f, 0.025f);
+			glutSolidCube(1.0f);
+			glPopMatrix();
+			
+			// Panel frame
+			glColor3f(r * 0.6f, g * 0.6f, b * 0.6f);
+			glPushMatrix();
+			glTranslatef(px, py, 0.005f);
+			glScalef(panelWidth * 0.96f, panelHeight * 0.94f, 0.015f);
+			glutSolidCube(1.0f);
+			glPopMatrix();
+			
+			// Rivets at corners
+			glColor3f(0.4f, 0.45f, 0.5f);
+			float rivetPos[4][2] = {
+				{-panelWidth * 0.42f, -panelHeight * 0.4f},
+				{panelWidth * 0.42f, -panelHeight * 0.4f},
+				{-panelWidth * 0.42f, panelHeight * 0.4f},
+				{panelWidth * 0.42f, panelHeight * 0.4f}
+			};
+			for (int i = 0; i < 4; ++i) {
+				glPushMatrix();
+				glTranslatef(px + rivetPos[i][0], py + rivetPos[i][1], 0.025f);
+				glutSolidSphere(0.008f, 8, 8);
+				glPopMatrix();
+			}
+		}
+	}
+}
+
 void drawWalls() {
-	float r = 0.15f + 0.15f * sinf(wallColorPhase);
-	float g = 0.35f + 0.2f * sinf(wallColorPhase + 2.094f);
-	float b = 0.5f + 0.2f * sinf(wallColorPhase + 4.188f);
-	glColor3f(r, g, b);
 	float height = 0.7f;
-	float thickness = 0.04f;
+	float thickness = 0.05f;
 	float width = SCENE_HALF * 2.0f;
+	
+	// Back wall (-Z)
 	glPushMatrix();
 	glTranslatef(0.0f, height * 0.5f, -SCENE_HALF);
-	glScalef(width, height, thickness);
-	glutSolidCube(1.0f);
+	drawWallPanel(width, height, wallColorPhase);
 	glPopMatrix();
+	
+	// Front wall (+Z)
 	glPushMatrix();
 	glTranslatef(0.0f, height * 0.5f, SCENE_HALF);
-	glScalef(width, height, thickness);
-	glutSolidCube(1.0f);
+	glRotatef(180.0f, 0.0f, 1.0f, 0.0f);
+	drawWallPanel(width, height, wallColorPhase + 1.5f);
 	glPopMatrix();
+	
+	// Left wall (-X)
 	glPushMatrix();
 	glTranslatef(-SCENE_HALF, height * 0.5f, 0.0f);
-	glScalef(thickness, height, width);
-	glutSolidCube(1.0f);
+	glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
+	drawWallPanel(width, height, wallColorPhase + 3.0f);
 	glPopMatrix();
+	
+	// Right wall (+X)
 	glPushMatrix();
 	glTranslatef(SCENE_HALF, height * 0.5f, 0.0f);
-	glScalef(thickness, height, width);
-	glutSolidCube(1.0f);
+	glRotatef(-90.0f, 0.0f, 1.0f, 0.0f);
+	drawWallPanel(width, height, wallColorPhase + 4.5f);
 	glPopMatrix();
 }
 
@@ -688,45 +804,99 @@ void drawPlayer() {
 	glTranslatef(player.position.x, player.position.y, player.position.z);
 	glRotatef(player.yaw, 0.0f, 1.0f, 0.0f);
 	glRotatef(player.tilt, 1.0f, 0.0f, 0.0f);
-	glColor3f(0.1f, 0.27f, 0.45f);
+	
+	// Torso (wetsuit body)
+	glColor3f(0.12f, 0.3f, 0.5f);
 	glPushMatrix();
-	glTranslatef(0.0f, 0.12f, 0.0f);
-	glScalef(0.12f, 0.22f, 0.08f);
+	glTranslatef(0.0f, 0.13f, 0.0f);
+	glScalef(0.1f, 0.18f, 0.07f);
+	glutSolidSphere(1.0f, 20, 20);
+	glPopMatrix();
+	
+	// Torso equipment harness
+	glColor3f(0.15f, 0.15f, 0.18f);
+	glPushMatrix();
+	glTranslatef(0.0f, 0.15f, 0.055f);
+	glScalef(0.08f, 0.14f, 0.02f);
 	glutSolidCube(1.0f);
 	glPopMatrix();
-	glColor3f(0.08f, 0.18f, 0.3f);
+	
+	// Legs (upper)
+	glColor3f(0.1f, 0.25f, 0.42f);
 	glPushMatrix();
-	glTranslatef(-0.07f, 0.12f, 0.0f);
-	glScalef(0.06f, 0.18f, 0.06f);
-	glutSolidCube(1.0f);
+	glTranslatef(-0.035f, 0.05f, 0.0f);
+	glRotatef(-5.0f, 0.0f, 0.0f, 1.0f);
+	glScalef(0.03f, 0.1f, 0.03f);
+	glutSolidSphere(1.0f, 16, 16);
 	glPopMatrix();
 	glPushMatrix();
-	glTranslatef(0.07f, 0.12f, 0.0f);
-	glScalef(0.06f, 0.18f, 0.06f);
-	glutSolidCube(1.0f);
+	glTranslatef(0.035f, 0.05f, 0.0f);
+	glRotatef(5.0f, 0.0f, 0.0f, 1.0f);
+	glScalef(0.03f, 0.1f, 0.03f);
+	glutSolidSphere(1.0f, 16, 16);
+	glPopMatrix();
+	
+	// Arms (shoulders to elbows)
+	glColor3f(0.1f, 0.25f, 0.42f);
+	glPushMatrix();
+	glTranslatef(-0.08f, 0.18f, 0.0f);
+	glRotatef(-15.0f, 0.0f, 0.0f, 1.0f);
+	glScalef(0.025f, 0.08f, 0.025f);
+	glutSolidSphere(1.0f, 16, 16);
 	glPopMatrix();
 	glPushMatrix();
-	glTranslatef(-0.05f, 0.22f, 0.0f);
-	glScalef(0.04f, 0.16f, 0.04f);
-	glutSolidCube(1.0f);
+	glTranslatef(0.08f, 0.18f, 0.0f);
+	glRotatef(15.0f, 0.0f, 0.0f, 1.0f);
+	glScalef(0.025f, 0.08f, 0.025f);
+	glutSolidSphere(1.0f, 16, 16);
+	glPopMatrix();
+	
+	// Arms (elbows to hands)
+	glPushMatrix();
+	glTranslatef(-0.09f, 0.1f, 0.0f);
+	glRotatef(-10.0f, 0.0f, 0.0f, 1.0f);
+	glScalef(0.022f, 0.07f, 0.022f);
+	glutSolidSphere(1.0f, 14, 14);
 	glPopMatrix();
 	glPushMatrix();
-	glTranslatef(0.05f, 0.22f, 0.0f);
-	glScalef(0.04f, 0.16f, 0.04f);
-	glutSolidCube(1.0f);
+	glTranslatef(0.09f, 0.1f, 0.0f);
+	glRotatef(10.0f, 0.0f, 0.0f, 1.0f);
+	glScalef(0.022f, 0.07f, 0.022f);
+	glutSolidSphere(1.0f, 14, 14);
 	glPopMatrix();
-	glColor3f(0.6f, 0.8f, 0.9f);
+	
+	// Helmet (glass dome)
+	glColor3f(0.55f, 0.75f, 0.85f);
 	glPushMatrix();
-	glTranslatef(0.0f, 0.32f, 0.02f);
-	glScalef(0.12f, 0.12f, 0.12f);
-	glutSolidSphere(0.8f, 20, 20);
+	glTranslatef(0.0f, 0.28f, 0.01f);
+	glutSolidSphere(0.065f, 24, 24);
 	glPopMatrix();
-	glColor3f(0.2f, 0.22f, 0.24f);
+	
+	// Helmet ring collar
+	glColor3f(0.3f, 0.32f, 0.35f);
 	glPushMatrix();
-	glTranslatef(0.0f, 0.32f, -0.03f);
-	glScalef(0.1f, 0.1f, 0.04f);
-	glutSolidCube(1.0f);
+	glTranslatef(0.0f, 0.23f, 0.0f);
+	glutSolidTorus(0.015f, 0.07f, 12, 20);
 	glPopMatrix();
+	
+	// Backpack/air tank
+	glColor3f(0.25f, 0.27f, 0.3f);
+	glPushMatrix();
+	glTranslatef(0.0f, 0.16f, -0.06f);
+	glScalef(0.06f, 0.12f, 0.04f);
+	glutSolidSphere(1.0f, 16, 16);
+	glPopMatrix();
+	
+	// Face behind visor (darker)
+	glDisable(GL_LIGHTING);
+	glColor4f(0.15f, 0.12f, 0.1f, 0.6f);
+	glPushMatrix();
+	glTranslatef(0.0f, 0.28f, 0.035f);
+	glScalef(0.04f, 0.05f, 0.03f);
+	glutSolidSphere(1.0f, 12, 12);
+	glPopMatrix();
+	glEnable(GL_LIGHTING);
+	
 	glPopMatrix();
 }
 
@@ -734,23 +904,59 @@ void drawGoalAt(const Goal &goal) {
 	glPushMatrix();
 	glTranslatef(goal.position.x, goal.position.y, goal.position.z);
 	glRotatef(goalRotation, 0.0f, 1.0f, 0.0f);
-	glColor3f(0.9f, 0.85f, 0.2f);
+	
+	float pulse = 1.0f + 0.15f * sinf(goalRotation * 0.1f);
+	
+	// Outer containment cylinder
+	glColor3f(0.3f, 0.35f, 0.4f);
 	glPushMatrix();
-	glScalef(0.09f, 0.16f, 0.09f);
+	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+	glutSolidCylinder(0.06f, 0.18f, 20, 4);
+	glPopMatrix();
+	
+	// Top and bottom caps
+	glPushMatrix();
+	glTranslatef(0.0f, 0.09f, 0.0f);
+	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+	glutSolidCone(0.062f, 0.02f, 20, 1);
+	glPopMatrix();
+	glPushMatrix();
+	glTranslatef(0.0f, -0.09f, 0.0f);
+	glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+	glutSolidCone(0.062f, 0.02f, 20, 1);
+	glPopMatrix();
+	
+	// Glowing energy core (pulsing)
+	glDisable(GL_LIGHTING);
+	glColor4f(0.2f, 0.7f, 0.95f, 0.8f);
+	glPushMatrix();
+	glScalef(pulse, pulse, pulse);
+	glutSolidSphere(0.045f, 24, 24);
+	glPopMatrix();
+	
+	// Inner energy glow
+	glColor4f(0.4f, 0.85f, 1.0f, 0.5f);
+	glPushMatrix();
+	glScalef(pulse * 1.2f, pulse * 1.2f, pulse * 1.2f);
+	glutSolidSphere(0.055f, 20, 20);
+	glPopMatrix();
+	glEnable(GL_LIGHTING);
+	
+	// Support stand
+	glColor3f(0.25f, 0.28f, 0.32f);
+	glPushMatrix();
+	glTranslatef(0.0f, -0.12f, 0.0f);
+	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+	glutSolidCylinder(0.025f, 0.04f, 12, 2);
+	glPopMatrix();
+	
+	// Base platform
+	glPushMatrix();
+	glTranslatef(0.0f, -0.14f, 0.0f);
+	glScalef(0.08f, 0.015f, 0.08f);
 	glutSolidCube(1.0f);
 	glPopMatrix();
-	glColor3f(0.2f, 0.45f, 0.9f);
-	glPushMatrix();
-	glTranslatef(0.0f, 0.08f, 0.0f);
-	glScalef(0.07f, 0.07f, 0.07f);
-	glutSolidSphere(1.0f, 20, 20);
-	glPopMatrix();
-	glColor3f(0.75f, 0.3f, 0.2f);
-	glPushMatrix();
-	glTranslatef(0.0f, 0.16f, 0.0f);
-	glScalef(0.02f, 0.14f, 0.02f);
-	glutSolidCube(1.0f);
-	glPopMatrix();
+	
 	glPopMatrix();
 }
 
@@ -1118,7 +1324,7 @@ int main(int argc, char **argv) {
 	glutKeyboardFunc(Keyboard);
 	glutKeyboardUpFunc(KeyboardUp);
 	glutSpecialFunc(Special);
-	glClearColor(0.02f, 0.08f, 0.12f, 1.0f);
+	glClearColor(0.03f, 0.12f, 0.18f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
