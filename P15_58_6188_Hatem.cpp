@@ -238,7 +238,7 @@ void stopBackgroundMusic() {
 void startBackgroundMusic() {
 #if defined(__APPLE__)
 	stopBackgroundMusic();
-	std::string command = "afplay -q 1 \"";
+	std::string command = "afplay -t 110 -q 1 \"";
 	command += SOUND_TRACK;
 	command += "\" >/dev/null 2>&1 & echo $!";
 	FILE *pipe = popen(command.c_str(), "r");
@@ -1088,8 +1088,9 @@ void handlePlayerMovement(float dt) {
 		player.position.y -= PLAYER_ASCEND_SPEED * dt;
 	}
 	float minY = PLAYER_RADIUS;
-	player.position.x = clampf(player.position.x, -SCENE_HALF + PLAYER_RADIUS, SCENE_HALF - PLAYER_RADIUS);
-	player.position.z = clampf(player.position.z, -SCENE_HALF + PLAYER_RADIUS, SCENE_HALF - PLAYER_RADIUS);
+	float wallThickness = 0.03f;  // Account for wall panel thickness
+	player.position.x = clampf(player.position.x, -SCENE_HALF + PLAYER_RADIUS + wallThickness, SCENE_HALF - PLAYER_RADIUS - wallThickness);
+	player.position.z = clampf(player.position.z, -SCENE_HALF + PLAYER_RADIUS + wallThickness, SCENE_HALF - PLAYER_RADIUS - wallThickness);
 	player.position.y = clampf(player.position.y, minY, MAX_HEIGHT);
 	bool onGround = fabsf(player.position.y - minY) < 0.002f;
 	player.airborne = !onGround;
@@ -1125,13 +1126,16 @@ void updateGame(float dt) {
 		return;
 	}
 	remainingTime -= dt;
+	
+	// At 10 seconds remaining, play the buzzer
+	if (remainingTime <= 10.0f && remainingTime > 9.9f && !loseSoundPlayed) {
+		playEffect(SOUND_BUZZER);
+		loseSoundPlayed = true;
+	}
+	
 	if (remainingTime <= 0.0f) {
 		remainingTime = 0.0f;
 		gameState = goalsRemaining() == 0 ? STATE_WIN : STATE_LOSE;
-		if (gameState == STATE_LOSE && !loseSoundPlayed) {
-			playEffect(SOUND_BUZZER);
-			loseSoundPlayed = true;
-		}
 	}
 	goalRotation += dt * 50.0f;
 	wallColorPhase += dt * 0.7f;
