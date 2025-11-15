@@ -9,6 +9,12 @@
 #include <GL/glut.h>
 #endif
 #include <vector>
+#include <string>
+#if defined(__APPLE__)
+#include <signal.h>
+#include <sys/types.h>
+#include <unistd.h>
+#endif
 
 #define GLUT_KEY_ESCAPE 27
 #define DEG2RAD(a) (a * 0.0174532925f)
@@ -147,6 +153,18 @@ Player player;
 std::vector<Goal> goals;
 AnimationController objectControllers[5];
 
+const char *SOUND_TRACK = "assets/audio/Crab Rave Noisestorm.mp3";
+const char *SOUND_SERVO = "assets/audio/Mechanical Servo Tremolo by Patrick Lieberkind.wav";
+const char *SOUND_GOAL = "assets/audio/Underwater Bubbles by Robinhood76.wav";
+const char *SOUND_BUZZER = "assets/audio/Time Running Out Buzzer.wav";
+
+#if defined(__APPLE__)
+pid_t backgroundMusicPid = -1;
+#endif
+
+bool loseSoundPlayed = false;
+bool winSoundPlayed = false;
+
 GameState gameState = STATE_PLAYING;
 
 bool moveForward = false;
@@ -189,6 +207,49 @@ void setFrontView();
 void setSideView();
 void setTopView();
 void setFreeView();
+void startBackgroundMusic();
+void stopBackgroundMusic();
+void playEffect(const char *path);
+
+void playEffect(const char *path) {
+#if defined(__APPLE__)
+	if (!path) {
+		return;
+	}
+	std::string command = "afplay -q 1 \"";
+	command += path;
+	command += "\" >/dev/null 2>&1 &";
+	system(command.c_str());
+#else
+	(void)path;
+#endif
+}
+
+void stopBackgroundMusic() {
+#if defined(__APPLE__)
+	if (backgroundMusicPid > 0) {
+		kill(backgroundMusicPid, SIGTERM);
+		backgroundMusicPid = -1;
+	}
+#endif
+}
+
+void startBackgroundMusic() {
+#if defined(__APPLE__)
+	stopBackgroundMusic();
+	std::string command = "afplay -q 1 \"";
+	command += SOUND_TRACK;
+	command += "\" >/dev/null 2>&1 & echo $!";
+	FILE *pipe = popen(command.c_str(), "r");
+	if (pipe) {
+		char buffer[32];
+		if (fgets(buffer, sizeof(buffer), pipe)) {
+			backgroundMusicPid = static_cast<pid_t>(atoi(buffer));
+		}
+		pclose(pipe);
+	}
+#endif
+}
 
 int goalsRemaining() {
 	int count = 0;
@@ -232,6 +293,9 @@ void resetGame() {
 	initGoals();
 	moveForward = moveBackward = moveLeft = moveRight = false;
 	moveUp = moveDown = false;
+	loseSoundPlayed = false;
+	winSoundPlayed = false;
+	startBackgroundMusic();
 	lastTick = glutGet(GLUT_ELAPSED_TIME);
 }
 
@@ -686,6 +750,7 @@ void handleGoalCollection() {
 			Vector3f diff = player.position - goals[i].position;
 			if (diff.length() < GOAL_RADIUS) {
 				goals[i].collected = true;
+				playEffect(SOUND_GOAL);
 			}
 		}
 	}
@@ -711,6 +776,10 @@ void updateGame(float dt) {
 	if (remainingTime <= 0.0f) {
 		remainingTime = 0.0f;
 		gameState = goalsRemaining() == 0 ? STATE_WIN : STATE_LOSE;
+		if (gameState == STATE_LOSE && !loseSoundPlayed) {
+			playEffect(SOUND_BUZZER);
+			loseSoundPlayed = true;
+		}
 	}
 	goalRotation += dt * 50.0f;
 	wallColorPhase += dt * 0.7f;
@@ -740,6 +809,7 @@ void toggleAnimation(int index) {
 		return;
 	}
 	objectControllers[index].active = !objectControllers[index].active;
+	playEffect(SOUND_SERVO);
 }
 
 void Keyboard(unsigned char key, int, int) {
@@ -813,6 +883,7 @@ void Keyboard(unsigned char key, int, int) {
 		resetGame();
 		break;
 	case GLUT_KEY_ESCAPE:
+		stopBackgroundMusic();
 		exit(EXIT_SUCCESS);
 	}
 }
@@ -910,6 +981,9 @@ int main(int argc, char **argv) {
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+#if defined(__APPLE__)
+	atexit(stopBackgroundMusic);
+#endif
 	resetGame();
 	glutTimerFunc(16, UpdateTimer, 0);
 	glutMainLoop();

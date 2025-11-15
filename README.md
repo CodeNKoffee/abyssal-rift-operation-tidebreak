@@ -1,4 +1,4 @@
-# Underwater Base (Assignment 2)
+# Abyssal Rift: Operation Tidebreak
 
 Single-file OpenGL/GLUT game for DMET502 Assignment 2. The scene represents an underwater research dome that satisfies the brief: ground plane, four walls, diver player, at least three oxygen-cell goals, and five themed props (floodlight fence, airlock gate, coral cluster, console, repair drone). Lighting, animations, camera controls, HUD, and win/lose transitions are implemented per the specification excerpted below.
 
@@ -41,6 +41,17 @@ brew unlink freeglut
 ```
 
 Rebuild afterward using the command above; the resulting binary uses the native Cocoa windowing path and launches normally.
+
+## Audio & Credits
+
+Planned audio set (meets the “3 distinct sounds” bonus once wired in):
+
+- **Background track:** "Crab Rave" – Noisestorm (Monstercat). Loop via `afplay` or embed audio player; credit in-game HUD + README.
+- **Animation servo cue:** Short hydraulic/servo sample from FreeSound (e.g., `freesound.org/people/…` — update with exact asset once finalized).
+- **Goal pickup effect:** Bubble pop/chime sample (FreeSound). Trigger when an oxygen cell is collected.
+- **Timer fail cue (optional fourth):** Alarm/klaxon sample to emphasize the GAME LOSE transition.
+
+> Remember to keep local `.mp3`/`.wav` assets in `audio/` and cite creator + license next to each bullet once locked.
 
 ## Assignment Checklist
 
