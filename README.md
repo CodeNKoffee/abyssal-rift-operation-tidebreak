@@ -544,7 +544,10 @@ AnimationController  // Per-object animation state
 ### macOS
 
 ```bash
-g++ -framework OpenGL -framework GLUT underwater_base.cpp -o underwater_base
+cd "/Users/hatem/University/w_25/DMET502/Assignments & Projects/2/a2/A2"
+clang++ P15_58_6188_Hatem.cpp -std=c++17 -DGL_SILENCE_DEPRECATION \
+  -framework GLUT -framework OpenGL -framework Cocoa \
+  -o underwater_base
 ./underwater_base
 ```
 
