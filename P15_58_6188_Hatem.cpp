@@ -911,7 +911,9 @@ void drawGoalAt(const Goal &goal) {
 	glColor3f(0.3f, 0.35f, 0.4f);
 	glPushMatrix();
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	glutSolidCylinder(0.06f, 0.18f, 20, 4);
+	GLUquadric* quad1 = gluNewQuadric();
+	gluCylinder(quad1, 0.06f, 0.06f, 0.18f, 20, 4);
+	gluDeleteQuadric(quad1);
 	glPopMatrix();
 	
 	// Top and bottom caps
@@ -947,7 +949,9 @@ void drawGoalAt(const Goal &goal) {
 	glPushMatrix();
 	glTranslatef(0.0f, -0.12f, 0.0f);
 	glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-	glutSolidCylinder(0.025f, 0.04f, 12, 2);
+	GLUquadric* quad2 = gluNewQuadric();
+	gluCylinder(quad2, 0.025f, 0.025f, 0.04f, 12, 2);
+	gluDeleteQuadric(quad2);
 	glPopMatrix();
 	
 	// Base platform
@@ -1168,6 +1172,20 @@ void toggleAnimation(int index) {
 	playEffect(SOUND_SERVO);
 }
 
+void toggleAllAnimations() {
+	for (int i = 0; i < 5; ++i) {
+		objectControllers[i].active = true;
+	}
+	playEffect(SOUND_SERVO);
+}
+
+void stopAllAnimations() {
+	for (int i = 0; i < 5; ++i) {
+		objectControllers[i].active = false;
+	}
+	playEffect(SOUND_SERVO);
+}
+
 void Keyboard(unsigned char key, int, int) {
 	float d = 0.05f;
 	switch (key) {
@@ -1220,19 +1238,10 @@ void Keyboard(unsigned char key, int, int) {
 		setFreeView();
 		break;
 	case '5':
-		toggleAnimation(0);
+		toggleAllAnimations();
 		break;
 	case '6':
-		toggleAnimation(1);
-		break;
-	case '7':
-		toggleAnimation(2);
-		break;
-	case '8':
-		toggleAnimation(3);
-		break;
-	case '9':
-		toggleAnimation(4);
+		stopAllAnimations();
 		break;
 	case 'p':
 	case 'P':
