@@ -187,6 +187,12 @@ const float PLAYER_SPEED = 0.65f;
 const float PLAYER_ASCEND_SPEED = 0.5f;
 const float GOAL_RADIUS = 0.12f;
 
+// Music asset availability flags
+bool crabRaveAvailable = false;
+bool servoAvailable = false;
+bool goalAvailable = false;
+bool buzzerAvailable = false;
+
 void setupLights();
 void setupCamera();
 void resetGame();
@@ -212,9 +218,25 @@ void startBackgroundMusic();
 void stopBackgroundMusic();
 void playEffect(const char *path);
 
+bool fileExists(const char *filename) {
+    FILE *file = fopen(filename, "rb");
+    if (file) {
+        fclose(file);
+        return true;
+    }
+    return false;
+}
+
+void checkMusicAssets() {
+    crabRaveAvailable = fileExists(SOUND_TRACK);
+    servoAvailable = fileExists(SOUND_SERVO);
+    goalAvailable = fileExists(SOUND_GOAL);
+    buzzerAvailable = fileExists(SOUND_BUZZER);
+}
+
 void playEffect(const char *path) {
 #if defined(__APPLE__)
-	if (!path) {
+	if (!path || !fileExists(path)) {
 		return;
 	}
 	std::string command = "afplay -q 1 \"";
@@ -232,22 +254,31 @@ void stopBackgroundMusic() {
 		kill(backgroundMusicPid, SIGTERM);
 		backgroundMusicPid = -1;
 	}
+	// Also kill any afplay processes playing our music file
+	std::string killCmd = "pkill -f 'afplay.*Crab Rave' 2>/dev/null";
+	system(killCmd.c_str());
 #endif
 }
 
 void startBackgroundMusic() {
 #if defined(__APPLE__)
 	stopBackgroundMusic();
-	std::string command = "afplay -t 110 -q 1 \"";
-	command += SOUND_TRACK;
-	command += "\" >/dev/null 2>&1 & echo $!";
-	FILE *pipe = popen(command.c_str(), "r");
-	if (pipe) {
-		char buffer[32];
-		if (fgets(buffer, sizeof(buffer), pipe)) {
-			backgroundMusicPid = static_cast<pid_t>(atoi(buffer));
+	if (crabRaveAvailable) {
+		// Create a background shell loop that plays the music
+		std::string command = "sh -c 'while true; do afplay \"";
+		command += SOUND_TRACK;
+		command += "\" 2>/dev/null; done' >/dev/null 2>&1 &";
+		system(command.c_str());
+		// Give it a moment to start, then find the process
+		usleep(100000); // 100ms
+		FILE* fp = popen("ps aux | grep 'afplay.*Crab Rave' | grep -v grep | awk '{print $2}' | head -1", "r");
+		if (fp) {
+			char buffer[32];
+			if (fgets(buffer, sizeof(buffer), fp) != NULL) {
+				backgroundMusicPid = atoi(buffer);
+			}
+			pclose(fp);
 		}
-		pclose(pipe);
 	}
 #endif
 }
@@ -1092,7 +1123,7 @@ void handlePlayerMovement(float dt) {
 		player.position.y -= PLAYER_ASCEND_SPEED * dt;
 	}
 	float minY = PLAYER_RADIUS;
-	float wallThickness = 0.03f;  // Account for wall panel thickness
+	float wallThickness = 0.03f;
 	player.position.x = clampf(player.position.x, -SCENE_HALF + PLAYER_RADIUS + wallThickness, SCENE_HALF - PLAYER_RADIUS - wallThickness);
 	player.position.z = clampf(player.position.z, -SCENE_HALF + PLAYER_RADIUS + wallThickness, SCENE_HALF - PLAYER_RADIUS - wallThickness);
 	player.position.y = clampf(player.position.y, minY, MAX_HEIGHT);
@@ -1107,7 +1138,9 @@ void handleGoalCollection() {
 			Vector3f diff = player.position - goals[i].position;
 			if (diff.length() < GOAL_RADIUS) {
 				goals[i].collected = true;
-				playEffect(SOUND_GOAL);
+				if (goalAvailable) {
+					playEffect(SOUND_GOAL);
+				}
 			}
 		}
 	}
@@ -1131,9 +1164,12 @@ void updateGame(float dt) {
 	}
 	remainingTime -= dt;
 	
-	// At 10 seconds remaining, play the buzzer
-	if (remainingTime <= 10.0f && remainingTime > 9.9f && !loseSoundPlayed) {
-		playEffect(SOUND_BUZZER);
+	// At 10 seconds remaining, stop music and play the buzzer
+	if (remainingTime <= 10.0f && !loseSoundPlayed) {
+		stopBackgroundMusic();  // Stop Crab Rave
+		if (buzzerAvailable) {
+			playEffect(SOUND_BUZZER);
+		}
 		loseSoundPlayed = true;
 	}
 	
@@ -1169,21 +1205,27 @@ void toggleAnimation(int index) {
 		return;
 	}
 	objectControllers[index].active = !objectControllers[index].active;
-	playEffect(SOUND_SERVO);
+	if (servoAvailable) {
+		playEffect(SOUND_SERVO);
+	}
 }
 
 void toggleAllAnimations() {
 	for (int i = 0; i < 5; ++i) {
 		objectControllers[i].active = true;
 	}
-	playEffect(SOUND_SERVO);
+	if (servoAvailable) {
+		playEffect(SOUND_SERVO);
+	}
 }
 
 void stopAllAnimations() {
 	for (int i = 0; i < 5; ++i) {
 		objectControllers[i].active = false;
 	}
-	playEffect(SOUND_SERVO);
+	if (servoAvailable) {
+		playEffect(SOUND_SERVO);
+	}
 }
 
 void Keyboard(unsigned char key, int, int) {
@@ -1349,6 +1391,7 @@ int main(int argc, char **argv) {
 #if defined(__APPLE__)
 	atexit(stopBackgroundMusic);
 #endif
+	checkMusicAssets();  // Check which audio files exist
 	resetGame();
 	glutTimerFunc(16, UpdateTimer, 0);
 	glutMainLoop();
