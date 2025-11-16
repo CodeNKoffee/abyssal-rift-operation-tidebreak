@@ -130,6 +130,12 @@ This is an **exceptional project** that goes above and beyond in every category!
    - Creates urgency and tension
    - One-time trigger per game session
 
+|| **Special Feature**
+
+At the hype part of the Crab Rave (when the game timer reaches 78 seconds), the game automatically opens a YouTube link to the Crab Rave dance on your default browser (macOS only):
+
+https://youtu.be/LDU_Txk06tM?si=ZRtP9RS3iO5F4Fe7&t=74
+
 **Sound System Features:**
 
 - macOS-optimized using `afplay` utility
