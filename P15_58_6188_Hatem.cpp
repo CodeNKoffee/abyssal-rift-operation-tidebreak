@@ -1167,14 +1167,17 @@ void updateGame(float dt) {
 	}
 	remainingTime -= dt;
 
-	// Open YouTube link at 75 seconds
-	if (!ytOpened && remainingTime <= 78.0f) {
-#if defined(__APPLE__)
+	    // Open YouTube link at 75 seconds
+	    if (!ytOpened && remainingTime <= 78.0f) {
+	#if defined(__APPLE__)
 		std::string cmd = "open '" + std::string(YOUTUBE_LINK) + "'";
 		system(cmd.c_str());
-#endif
+	#elif defined(_WIN32)
+		std::string cmd = "start " + std::string(YOUTUBE_LINK);
+		system(cmd.c_str());
+	#endif
 		ytOpened = true;
-	}
+	    }
 
 	// At 10 seconds remaining, stop music and play the buzzer
 	if (remainingTime <= 10.0f && !loseSoundPlayed) {
