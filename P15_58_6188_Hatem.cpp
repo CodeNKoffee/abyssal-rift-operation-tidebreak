@@ -19,6 +19,8 @@
 #define GLUT_KEY_ESCAPE 27
 #define DEG2RAD(a) (a * 0.0174532925f)
 
+const char *YOUTUBE_LINK = "https://youtu.be/LDU_Txk06tM?si=ZRtP9RS3iO5F4Fe7&t=74";
+
 class Vector3f {
 public:
 	float x, y, z;
@@ -1168,7 +1170,8 @@ void updateGame(float dt) {
 	// Open YouTube link at 75 seconds
 	if (!ytOpened && remainingTime <= 78.0f) {
 #if defined(__APPLE__)
-		system("open 'https://youtu.be/LDU_Txk06tM?si=ZRtP9RS3iO5F4Fe7&t=74'");
+		std::string cmd = "open '" + std::string(YOUTUBE_LINK) + "'";
+		system(cmd.c_str());
 #endif
 		ytOpened = true;
 	}
