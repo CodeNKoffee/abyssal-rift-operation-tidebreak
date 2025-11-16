@@ -1159,11 +1159,20 @@ void updateAnimations(float dt) {
 }
 
 void updateGame(float dt) {
+	static bool ytOpened = false;
 	if (gameState != STATE_PLAYING) {
 		return;
 	}
 	remainingTime -= dt;
-	
+
+	// Open YouTube link at 75 seconds
+	if (!ytOpened && remainingTime <= 78.0f) {
+#if defined(__APPLE__)
+		system("open 'https://youtu.be/LDU_Txk06tM?si=ZRtP9RS3iO5F4Fe7&t=74'");
+#endif
+		ytOpened = true;
+	}
+
 	// At 10 seconds remaining, stop music and play the buzzer
 	if (remainingTime <= 10.0f && !loseSoundPlayed) {
 		stopBackgroundMusic();  // Stop Crab Rave
@@ -1172,7 +1181,7 @@ void updateGame(float dt) {
 		}
 		loseSoundPlayed = true;
 	}
-	
+
 	if (remainingTime <= 0.0f) {
 		remainingTime = 0.0f;
 		gameState = goalsRemaining() == 0 ? STATE_WIN : STATE_LOSE;
